@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+  <label>Matricula</label>
+  <input type="text" id="matricula" name="matricula">
+  <h1>Cliente HTTP</h1>
+  <div>
+    <button onclick="enviarHttp()">Enviar</button>
+    <div id="datosHttp"></div>
+  </div>
+  <h1>Cliente WebSocket</h1>
+  <div>
+    <button onclick="enviarWs()">Enviar</button>
+    <div id="datosWs"></div>
+  </div>
+</body>
+<script>
+  async function enviarHttp() {
+    const matricula = document.getElementById('matricula').value;
+    let res = await fetch('/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ matricula })
+    })
+    let json = await res.json();
+    document.getElementById('datosHttp').innerText = JSON.stringify(json);
+    console.log(json);
+  }
+
+  function enviarMqtt() {
+    const matricula = document.getElementById('matricula').value;
+    const mqttClient = mqtt.connect("mqtt://test.mosquitto.org");
+    // mqttClient.publish("mqtt/test", matricula);
+    mqttClient.on('message', () => {
+      mqttClient.publish("mqtt/test", JSON.stringify({ matricula }));
+      mqttClient.end();
+    });
+  }
+
+  function enviarWs() {
+    const matricula = document.getElementById('matricula').value;
+    const socket = new WebSocket('ws://localhost:9000');
+    socket.onopen = () => {
+      console.log('Conectado al servidor de WebSocket');
+      socket.send(`{"matricula": "${matricula}"}`);
+    };
+    socket.onmessage = (event) => {
+      console.log('Mensaje del servidor WebSocket:', event.data)
+      document.getElementById('datosWs').innerText = event.data;
+    };
+  }
+</script>
+</html>
